@@ -7,26 +7,43 @@
     <!-- =====================
     <link rel="stylesheet" href="css/style.css"/>
     ====================== -->
-    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" style="position:fixed;left:0px;width:400px">
+
+      <button type="previous" id="button-previous">Previous</button>
+      <button type="next" id="button-next">Next</button>
+
+      <div id="results">
+        <h1 id="text-heading">Title-Header</h1>
+        <p id="text-description">Your garbage collection day is If this week is a federal holiday, leave your
+        garbage outside on the following day.</p>
+      </div>
+
+    <!--blank space for future map-->
+    <div id="blankSpace" style="position:fixed;right:0px;left:400px;height:100%;">
     </div>
-    
+
+    </div>
+
+
 
 
 
     <!-- Map -->
-    <div id="map" class="map"></div>
+    <!-- <div id="map" class="map"></div> -->
 
     <!-- Javascript Imports -->
     <script src="js/leaflet.js"></script>
     <script src="js/underscore.js"></script>
+    <script src="js/jquery-2.2.0.js"></script>
+    <script src="js/main.js"></script>
 
     <!-- Javascript Code -->
-    <script>
+    <!-- <script>
       var map = L.map('map', {
         center: [39.9522, -75.1639],
         zoom: 14
@@ -37,7 +54,7 @@
         minZoom: 0,
         maxZoom: 20,
         ext: 'png'
-      }).addTo(map);
+      }).addTo(map); -->
     </script>
 
   </body>
