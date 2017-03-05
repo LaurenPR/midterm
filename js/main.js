@@ -86,50 +86,64 @@ var resetMap = function(allMarkers) {
   });
 };
 
-/* =====================
-  Working with Data
-===================== */
+
+// centerLatLng = [39.9522, -75.1639]; //default on first page
+// zoomExtent = 12; //default on first page
+
+var updateMapFnx = function (){
+
+};
+
+var setColorStyle = function (slideObject) {
+   $('#blankSpace').css('background-color', slideObject.color);
+   console.log("You are on slide" + " " + appState.slideNumber);
+};
+
+
+/* ==========================================
+  Creating Slide Information + Parameters
+  ========================================== */
 
 
 // Specifying what will be on each slide:
 var slide1 = {
   'color': "#7D26CD", //purple
-  'title-Header': "My First Page!",
+  'title-Header': "Outdoor Advertising in Philadelphia",
   'sidebar-Text': "My text here.....",
-  // 'PanningParams': ,
-  // 'Zoomingparams': ,
+  'panningParams': [39.9522, -75.1639],
+  'zoomingparams': 12,
   };
 
 var slide2 = {
   'color': "#6495ED", //blue
   'title-Header': "My second Page!",
   'sidebar-Text': "More text here.....",
-  // 'PanningParams': ,
-  // 'Zoomingparams': ,
+  'panningParams': [39.9522, -75.1639],
+  'zoomingparams': 10,
   };
 
 var slide3 = {
   'color': "#666600",
   'title-Header': "My third Page!",
   'sidebar-Text': "this could talk about a filter...",
-  // 'PanningParams': ,
-  // 'Zoomingparams': ,
+  'panningParams': [39.9522, -100],
+  'zoomingparams': 11,
   };
 
 var slide4 = {
   'color': "#006600",
   'title-Header': "My 4th Page!",
   'sidebar-Text': "this could talk about a second filter option...",
-  // 'PanningParams': ,
-  // 'Zoomingparams': ,
+  'panningParams': [52, -75.1639],
+  'zoomingparams': 5,
   };
 
 var slide5 = {
   'color': "#660066",
   'title-Header': "5th Page!",
   'sidebar-Text': "this could zoom in!",
-  // 'PanningParams': ,
-  // 'Zoomingparams': ,
+  'panningParams': [39.9522, -75.1639],
+  'zoomingparams': 12,
   };
 
 var allSlides = [slide1, slide2, slide3, slide4, slide5];
@@ -147,13 +161,9 @@ var appState = {
 
 
 
-
-
-
- // Importing Data:
-
-
-
+ /* =====================
+   Importing Data
+ ===================== */
  // Data Source: Outdoor Advertising Dataset for Philadlephia
  // GeoJSON SOURCE: http://data.phl.opendata.arcgis.com/datasets/5eb34bd14d3e4cc996168a1a1c026e0e_0.geojson
  // Data Fields (An Example):
@@ -179,15 +189,12 @@ var appState = {
  //       _id: 67
  //       AD_AREA: 300
 
-
- /* =====================
-   Importing Data
- ===================== */
  var parsedData;
 
  // var geoData = LI_OUTDOOR_ADVERTISING.geojson; //hardcoding option, does NOT work
  $.ajax('https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI_OUTDOOR_SIGNS.geojson').done(function(data){
    parsedData = JSON.parse(data);
+   updateMapFnx(parsedData);
  });
 
 // note: you MUST give it a raw github link (no java)
@@ -202,30 +209,26 @@ var appState = {
   Executing Code
 ===================== */
 
-// var setSideBarText = function () {
-// };
-
-var setColorStyle = function (slideObject) {
-   $('#blankSpace').css('background-color', slideObject.color);
-   console.log("You are on slide" + " " + appState.slideNumber);
-};
-
-// "text-heading"
-// "text-description"
-
 $("#button-next").click(function() {
   setColorStyle(nextSlide());
-  // console.log(1, appState.slideInformation);
-  // console.log(2, appState.slideNumber);
-  // console.log(3, appState.slideInformation[appState.slideNumber]);
+  console.log(1, appState.slideInformation);
+  console.log(2, appState.slideNumber);
+  console.log(3, appState.slideInformation[appState.slideNumber]);
   $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
   $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
-
+  centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"];
+  console.log(centerLatLng);
+  zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingparams"];
+  console.log(zoomExtent);
+  map.setView(centerLatLng, zoomExtent);
 });
+
 
 $("#button-previous").click(function() {
   setColorStyle(previousSlide());
   $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
   $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
+  centerLatLng = appState.slideInformation[appState.slideNumber.panningParams];
+  zoomExtent = appState.slideInformation[appState.slideNumber.zoomingparams];
 
 });
