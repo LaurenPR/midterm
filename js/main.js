@@ -8,20 +8,29 @@ Resources:
 /* =====================
  Leaflet setup
 ===================== */
-var centerLatLng = [39.9522, -75.1639];
-var zoomExtent = 14;
+var centerLatLng = [39.9522, -75.1639]; //default on first page
+var zoomExtent = 12; //default on first page
 
 var map = L.map('map', {
   center: centerLatLng,
   zoom: zoomExtent
 });
 
-var Stamen_TonerLite = L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
-  attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  subdomains: 'abcd',
-  minZoom: 0,
-  maxZoom: 20,
-  ext: 'png'
+// alternative map using Stamen Tiles
+// var Stamen_TonerLite = L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
+//   attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+//   subdomains: 'abcd',
+//   minZoom: 0,
+//   maxZoom: 20,
+//   ext: 'png'
+// }).addTo(map);
+
+//using satellite imagery from Mapbox (Default)
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    maxZoom: 22,
+    id: 'mapbox.satellite',
+    accessToken: 'pk.eyJ1IjoibGF1cmVucHIiLCJhIjoiY2l6dnE0OTEyMDFhbDMzbmg1OHc4NHUxbiJ9.MbtcEw5vS99Rl66Ef2Htfg',
 }).addTo(map);
 
 
