@@ -16,7 +16,7 @@ storyboard ideas:
 slide 1: initially show all the advertising
 slide 2: color each owner as a different color
 .... what percentage each owner has of the total? (top 5)
-slide 3: filter only "billboard" size signals
+slide 3: filter only most prominent advertising owner (OR "billboard" size signals if I can figure out how to JOIN the geoJSON with csv with more info)
 slide 4: distance to highways layer (cloropath coloring based on distance)
 slide 5: zoom to a specific neighborhood (COUNT??)
 */
@@ -59,14 +59,7 @@ var slide1 = {
   'sidebar-Text': "My text here.....",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 12,
-  'filterFunction': theFilter = function(feature) {
-     if (feature.properties.OWNER === "CLEAR CHANNEL OUTDOOR" || feature.properties.OWNER === "OUTFRONT MEDIA"){
-       return false;
-     }
-     else {
-       return true
-       ;}
-   },
+  'filterParam': null,
   };
 
 var slide2 = {
@@ -75,8 +68,24 @@ var slide2 = {
   'sidebar-Text': "More text here.....",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 10,
-  'filterParam': function(e){return e;},
-  };
+  'filterParam': null,
+};
+
+  // CLEAR CHANNEL OUTDOOR: Array[1266]
+  // INTERSTATE OUTDOOR ADVERTISING: Array[7]
+  // LAMAR ADVERTISING: Array[1]
+  // OUTFRONT MEDIA: Array[65]
+  // STEEN OUTDOOR: Array[189]
+
+  //setting the 3rd slide's filter function:
+  var theFilter = function(feature) {
+     if (feature.properties.OWNER === "CLEAR CHANNEL OUTDOOR" || feature.properties.OWNER === "OUTFRONT MEDIA"){
+       return true;
+     }
+     else {
+       return false;
+     }
+   };
 
 var slide3 = {
   'color': "#666600",
@@ -84,8 +93,8 @@ var slide3 = {
   'sidebar-Text': "this could talk about a filter...",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 11,
-  'filterParam': function(e){return e;},
-  };
+  'filterParam': theFilter,
+};
 
 var slide4 = {
   'color': "#006600",
@@ -93,8 +102,7 @@ var slide4 = {
   'sidebar-Text': "this could talk about a second filter option...",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 5,
-  'filterParam': function(e){return e;},
-
+  'filterParam': null,
   };
 
 var slide5 = {
@@ -103,7 +111,7 @@ var slide5 = {
   'sidebar-Text': "this could zoom in!",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 12,
-  'filterParam': function(e){return e;},
+  'filterParam': null,
 
   };
 
@@ -150,22 +158,11 @@ var previousSlide = function () {
 };
 
 // more global variables to reference later
- var theFilter;
  var theStyle;
 
-//setting default filter & styles (for first page):
-theFilter = function(feature) {
-   if (feature.properties.OWNER === "CLEAR CHANNEL OUTDOOR" || feature.properties.OWNER === "OUTFRONT MEDIA"){
-     return false;
-   }
-   else {
-     return true;
-   }
- };
+//setting styles options:
 
- var theFilter2 = function(feature) {
-      return feature;
-  };
+
 
 theStyle = function(feature) {
    switch (feature.properties.OWNER) {
@@ -261,32 +258,39 @@ var dataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI
 
       //to find unique owners in dataset & length of each array:
       var allOwners = _.map(parsedData.features, function(item) {return item.properties.OWNER;});
-      _.groupBy(allOwners);
+      var groupedOwners = _.groupBy(allOwners);
+      // console.log(groupedOwners);
+      // CHANNEL OUTDOOR: Array[1266]
+      // INTERSTATE OUTDOOR ADVERTISING: Array[7]
+      // LAMAR ADVERTISING: Array[1]
+      // OUTFRONT MEDIA: Array[65]
+      // STEEN OUTDOOR: Array[189]
 
-      // //default markers on first page
-      //  featureGroup = L.geoJson(parsedData, {
-      //    style: theStyle,
-      //    filter: theFilter,
-      //    pointToLayer: circleStyle,
-      //   //  onEachFeature: popupFnx
-      //  }).addTo(map);
-      // //  console.log(featureGroup);
-      //
-      // featureGroup.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+
+      //default markers on first page
+       featureGroup = L.geoJson(parsedData, {
+         style: theStyle,
+         filter: null,
+         pointToLayer: circleStyle,
+        //  onEachFeature: popupFnx
+       }).addTo(map);
+      //  console.log(featureGroup);
+
+      featureGroup.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
 
 
 
        $("#button-next").click(function() {
          // clear features from map:
-        //  featureGroup.clearLayers(); // clears any existing features from the geoJson layer for advertising
+         featureGroup.clearLayers(); // clears any existing features from the geoJson layer for advertising
          //call the next slide (THIS SHOULD CHANGE)
          setColorStyle(nextSlide());
          //undate text in sidebar:
          $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
          $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
          // add new data to the map:
-         console.log(3 , appState.slideInformation[appState.slideNumber]["filterParam"]);
-         var newMapData = L.geoJson(parsedData, {
+         console.log(3, appState.slideInformation[appState.slideNumber]["filterParam"]);
+         var featureGroup = L.geoJson(parsedData, {
            style: theStyle,
            filter: appState.slideInformation[appState.slideNumber]["filterParam"],
            pointToLayer: circleStyle,
@@ -296,7 +300,7 @@ var dataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI
 
          //  filterParamFnx = appState.slideInformation[appState.slideNumber]["filterFunction"];
          // change the map zoom & extend by panning:
-         centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"];
+         centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"]; //it actually doesn't reat it properly using the dot notation. Ignore the warnings.
          // console.log(centerLatLng);
          zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
          // console.log(zoomExtent);
@@ -311,11 +315,10 @@ var dataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI
          setColorStyle(previousSlide());
          $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
          $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
-         centerLatLng = appState.slideInformation[appState.slideNumber.panningParams];
-         zoomExtent = appState.slideInformation[appState.slideNumber.zoomingparams];
          centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"];
          zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
          map.setView(centerLatLng, zoomExtent);
+         showingCurrectButtonOptions();
      });
    });
 });
