@@ -56,3 +56,84 @@ h2 {
   left: 170px;
   top: 270px;
 }
+
+.legendDIV_background {
+  position: absolute;
+  z-index: 2000;
+  width: 220px;
+  height: 300px;
+  bottom: 20px;
+  right: 5px;
+  padding: 0;
+  background-color: #000;
+  opacity: 0.4;
+  border-radius:5%
+}
+
+.legendDIV {
+  position: absolute;
+  z-index: 2000;
+  width: 220px;
+  height: 310px;
+  bottom: 20px;
+  right: 5px;
+  padding: 0;
+  opacity: 1;
+}
+
+.legend {
+  position: relative;
+  bottom: 0;
+  left: 0;
+  padding: 5px;
+}
+
+.legend li {
+  font-size: 80%;
+  list-style: none;
+  margin-left: 0;
+  margin-bottom: 6px;
+  padding: 5px;
+  color: #fff;
+}
+
+.legend span {
+  display:block;
+  height: 20px;
+  float: left;
+  width: 20px;
+  margin: 0 7px;
+  border-radius:50% /*becomes a circle*/
+}
+
+
+.legend_special {
+  position: relative;
+  bottom: 0;
+  left: 0;
+  padding: 5px;
+}
+
+
+.legend_special {
+  position: relative;
+  bottom: 0;
+  left: 0;
+}
+
+.legend_special li {
+  font-size: 80%;
+  list-style: none;
+  margin-left: 0;
+  margin-bottom: 6px;
+  padding: 0 5px;
+  color: #fff;
+}
+
+.legend_special span{
+  display:block;
+  height: 20px;
+  float: left;
+  width: 20px;
+  margin: 0 7px;
+}

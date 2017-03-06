@@ -223,7 +223,6 @@ var setColorStyle = function (slideObject) {
    console.log("You are on slide" + " " + (appState.slideNumber + 1));
 };
 
-
 var showingCurrectButtonOptions = function() {
   if (appState.slideNumber === 0) {
     $("#button-previous").hide();
@@ -236,6 +235,44 @@ var showingCurrectButtonOptions = function() {
     $("#button-next").show();
   }
 };
+
+
+var showingCorrectLegend = function() {
+  if (appState.slideNumber === 0) {
+    $("#legend_allRED").show();
+    $("#legend_allOwners").hide();
+    $("#legend_Highway").hide();
+    $("#legend_HighDists").hide();
+  } else if (appState.slideNumber === 4 || appState.slideNumber === 5){
+    $("#legend_allRED").hide();
+    $("#legend_allOwners").show();
+    $("#legend_Highway").hide();
+    $("#legend_HighDists").show();
+  } else if (appState.slideNumber === 3){
+    $("#legend_allRED").hide();
+    $("#legend_allOwners").show();
+    $("#legend_Highway").show();
+    $("#legend_HighDists").hide();
+  } else {
+    $("#legend_allRED").hide();
+    $("#legend_allOwners").show();
+    $("#legend_Highway").hide();
+    $("#legend_HighDists").hide();
+  }
+};
+//
+// populationLegend.addTo(map);
+//
+// map.on('overlayadd', function (eventLayer) {
+//     // Switch to the Population legend...
+//     if (eventLayer.name === 'Population') {
+//         this.removeControl(populationChangeLegend);
+//         populationLegend.addTo(this);
+//     } else { // Or switch to the Population Change legend...
+//         this.removeControl(populationLegend);
+//         populationChangeLegend.addTo(this);
+//     }
+// });
 
  /* =====================
    Importing Data
@@ -311,7 +348,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
         // console.log(groupedOwners);
 
         // RESULTS:
-        // CHANNEL OUTDOOR: Array[1266]
+        // CLEAR CHANNEL OUTDOOR: Array[1266]
         // INTERSTATE OUTDOOR ADVERTISING: Array[7]
         // LAMAR ADVERTISING: Array[1]
         // OUTFRONT MEDIA: Array[65]
@@ -330,7 +367,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
         initialAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
 
         //code to execute with the NEXT button:
-         $("#button-next").click(function() {
+        $("#button-next").click(function() {
           // clear any existing features from map:
           if (initialAdvertisingFeatures !== undefined) {initialAdvertisingFeatures.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
           if (subsuquentAdvertisingFeatures !== undefined) {subsuquentAdvertisingFeatures.clearLayers();} // same as above but for subsequent slides
@@ -383,6 +420,9 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
            // console.log(zoomExtent);
            map.setView(centerLatLng, zoomExtent);
+
+           // ensure the correct legend appears for the map:
+           showingCorrectLegend();
 
            // ensure only the relevant next and previous buttons are visible:
            showingCurrectButtonOptions();
@@ -441,6 +481,9 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"];
            zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
            map.setView(centerLatLng, zoomExtent);
+
+           // ensure the correct legend appears for the map:
+           showingCorrectLegend();
 
            // ensure only the relevant next and previous buttons are visible:
            showingCurrectButtonOptions();
