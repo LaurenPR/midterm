@@ -1,28 +1,17 @@
 /*
-Resources:
-- for leaflet: http://leafletjs.com/reference.html#map-set-methods
-- for spatial join: http://turfjs.org/ (& https://github.com/turf-junkyard/turf-tag)
+Midterm Submission: Outdoor Adverising in Philadlephia (A Stodyboard)
+Lauren Payne-Riley
 
-MUST DO'S:
-(done) Your story map should have at least five slides
-(done) Your story map should have next and previous buttons
-(done) On the first slide of your story map, the previous button should be hidden
-(done) On the last slide of your story map, the next button should be hidden
-(done) The application should be structured in a way where clicking on the next and previous buttons will replace the data on the map and the text in the sidebar with the next or previous content (in other words, you are not building five different maps with different text and data—you are building one map in which the content changes based on user input)
-(done) At least one slide should change the zoom level or center of the map.
+This code creates a storyboard that walks a viewer through an
+applicationthat would identify outdoor advertising signs,
+their owners, and connection to highways.
 
-TO DO:
-- add legend
-- add sums for the number of signs for each owner (perhaps in the legend)
-- finish TURF count (for the highway district)
-
-storyboard ideas:
 slide 1: initially show all the advertising
 slide 2: color each owner as a different color
-.... what percentage each owner has of the total? (top 5)
 slide 3: filter only most prominent advertising owner
-slide 4: filter all other owners // previous idea (turned out to pretty much need Carto): distance to highways layer (cloropath coloring based on distance)
-slide 5 & 6: zoom to a specific highway district (COUNT??)
+slide 4: filter all other owners
+slide 5: show highwayd district sign counts
+slide 6: zoom to a specific highway district
 */
 
 /* =====================
@@ -51,7 +40,7 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
 var slide1 = {
   'color': "#7D26CD", //purple
   'title-Header': "Outdoor Advertising in Philadelphia",
-  'sidebar-Text': "This program helps you explore outdoor advertising in Philadelphia. It helps identify and filter by owner, calculate distance to nearest highways, and calculate the number of billboards and other outdoor advertising in different neighborhoods throughout Philadelphia.",
+  'sidebar-Text': "This program helps you explore outdoor advertising in Philadelphia. It helps identify and filter by owner, and calculates the number of outdoor advertising signs in different highway districts throughout Philadelphia.",
   'panningParams': [39.9522, -75.1639],
   'zoomingParams': 12,
   'filterParam': null,
@@ -174,11 +163,10 @@ var theEachOwnerStyle = function(feature) {
    }
    return {};
  };
-
- /* note: I had a hard time finding colors that would stand out against the dark green & tan aerial photo,
- hence the extensive use of green's opposite: red. If i had to re-do I would probably change the opacity of
- the aerial background (with mapbox), or only make the aerial visible at a certain zoom (and have a more
- basic background for the initial zoomed-out level)*/
+   /* note: I had a hard time finding colors that would stand out against the dark green & tan aerial photo,
+   hence the extensive use of green's opposite: red. If i had to re-do I would probably change the opacity of
+   the aerial background (with mapbox), or only make the aerial visible at a certain zoom (and have a more
+   basic background for the initial zoomed-out level)*/
 
 var filterStyle = function(feature){
   if (appState.slideNumber === 0){
@@ -207,7 +195,7 @@ var filterStyle = function(feature){
      radius: 2,
      stroke: true,
      color: "#000",
-    //  fillColor: null,
+    //  no fillColor (that will be determined by the style function)
      weight: 2,
      opacity: 1,
      fillOpacity: 0.8
@@ -260,19 +248,6 @@ var showingCorrectLegend = function() {
     $("#legend_HighDists").hide();
   }
 };
-//
-// populationLegend.addTo(map);
-//
-// map.on('overlayadd', function (eventLayer) {
-//     // Switch to the Population legend...
-//     if (eventLayer.name === 'Population') {
-//         this.removeControl(populationChangeLegend);
-//         populationLegend.addTo(this);
-//     } else { // Or switch to the Population Change legend...
-//         this.removeControl(populationLegend);
-//         populationChangeLegend.addTo(this);
-//     }
-// });
 
  /* =====================
    Importing Data
@@ -325,10 +300,8 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
  var highwayDistFeature; //use to store faeture groups about the highway districts
 
  $(document).ready(function() {
-   // var geoData = LI_OUTDOOR_ADVERTISING.geojson; //hardcoding option, does NOT work
    $.ajax(advertisignDataLink).done(function(pointData){ //note: when it included the word "Advertising" adblocker prevented if from loading
      parsedSignData = JSON.parse(pointData);
-      //  console.log(parsedSignData);
 
       $.ajax(highwayDistrictDataLink).done(function(polygonData) { // download this here because we reference it for more than one slide below
         parsedHighwayDistData = JSON.parse(polygonData);
@@ -360,9 +333,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            style: allRedStyle,
            filter: null,
            pointToLayer: circleStyle,
-          //  onEachFeature: popupFnx
          }).addTo(map);
-        //  console.log(initialAdvertisingFeatures);
 
         initialAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
 
@@ -375,7 +346,11 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
           if (highwayDistFeature !== undefined) {highwayDistFeature.clearLayers();} // same as above but for subsequent slides
 
            //call the next slide
-           setColorStyle(nextSlide());
+          setColorStyle(nextSlide());
+              /*[note: this is no-longer relevant with changing a color, however it has been
+              left so it calls the next slide; attempts to create a similar zooming slide function ran into issues
+              with the dot notations (similar to below). Hence, it was decided just to leave this in.]
+              */
 
            //update sidebar text:
            $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
@@ -391,7 +366,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            });}
 
            // add highway districts data to the map:
-            if (appState.slideNumber ===  4) {
+           if (appState.slideNumber ===  4) {
               highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
                style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
               }).addTo(map).bringToBack();
@@ -436,6 +411,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            if (highwayFeature !== undefined) {highwayFeature.clearLayers();} // same as above but for subsequent slides
            if (highwayDistFeature !== undefined) {highwayDistFeature.clearLayers();} // same as above but for subsequent slides
 
+           //call the next slide
            setColorStyle(previousSlide());
 
            // update sidebar text:
