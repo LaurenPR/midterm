@@ -21,8 +21,8 @@ slide 1: initially show all the advertising
 slide 2: color each owner as a different color
 .... what percentage each owner has of the total? (top 5)
 slide 3: filter only most prominent advertising owner
-slide 4: distance to highways layer (cloropath coloring based on distance)
-slide 5: zoom to a specific neighborhood (COUNT??)
+slide 4: filter all other owners // previous idea (turned out to pretty much need Carto): distance to highways layer (cloropath coloring based on distance)
+slide 5 & 6: zoom to a specific highway district (COUNT??)
 */
 
 /* =====================
@@ -34,16 +34,7 @@ var map = L.map('map', {
   zoom: 12, //default on first page
 });
 
-// alternative map using Stamen Tiles
-// var Stamen_TonerLite = L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', {
-//   attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-//   subdomains: 'abcd',
-//   minZoom: 0,
-//   maxZoom: 20,
-//   ext: 'png'
-// }).addTo(map);
-
-//using satellite imagery from Mapbox (Default)
+//using satellite imagery from Mapbox (default tiles)
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
     maxZoom: 22,
@@ -139,23 +130,14 @@ var allSlides = [slide1, slide2, slide3, slide4, slide5, slide6];
 // Defining an App State, including the current slide # and slide information:
 var appState = {
   'slideNumber': 0, // slideNumber keeps track of what slide you are on. It should increase when you
-                    // click the next button and decrease when you click the previous button. It
-                    // should never get so large that it is bigger than the dataset. It should never
-                    // get so small that it is smaller than 0.
+                    // click the next button and decrease when you click the previous button.
   'slideInformation': allSlides,
  };
 
 
 /* =====================
-  Functions (to call later)
+  Functions & Variables (to call later)
 ===================== */
-
-//creating GLOBAL VARIABLES so I can reference them outside the functions
-var featureGroup; //global to store information about the features that will be filtered
-var newFeatureGroup; //another global to reference
-var highwayFeature;
-var highwayDistFeature;
-
 // This switches what is being active on the page to the next Slide (no wrapping: hard stop at end slide)
 var nextSlide = function () {
  var limit = appState.slideInformation.length -1;
@@ -176,17 +158,7 @@ var previousSlide = function () {
 };
 
 
-// CLEAR CHANNEL OUTDOOR: Array[1266]
-// INTERSTATE OUTDOOR ADVERTISING: Array[7]
-// LAMAR ADVERTISING: Array[1]
-// OUTFRONT MEDIA: Array[65]
-// STEEN OUTDOOR: Array[189]
-
-
 //setting styles options:
-
-// gl = L.geoJson(data, {style: function(f) {return {'weight':10}}});
-
 var allRedStyle = function(feature) {
     return {color: "#EE3B3B"};
  };
@@ -204,6 +176,19 @@ var theEachOwnerStyle = function(feature) {
    return {};
  };
 
+ /* note: I had a hard time finding colors that would stand out against the dark green & tan aerial photo,
+ hence the extensive use of green's opposite: red. If i had to re-do I would probably change the opacity of
+ the aerial background (with mapbox), or only make the aerial visible at a certain zoom (and have a more
+ basic background for the initial zoomed-out level)*/
+
+
+// creating a chloropah function (dark to light green) for use later with highway district density map
+ var assingGreenChloropahColors = function(value) {
+     return value > 300 ? '#31a354' :
+            value > 200 ? '#a1d99b' :
+                          '#e5f5e0';
+ };
+
 //creating standard marker color & style options:
  var MarkerOptions = {
      radius: 2,
@@ -219,7 +204,7 @@ var  circleStyle = function (feature, latlng) {
          return L.circleMarker(latlng, MarkerOptions);
 };
 
-//this was just a function to test the prev & next button's ability:
+//this was just a function to test the prev & next button's ability (still helps identify what slide you are on):
 var setColorStyle = function (slideObject) {
    $('#blankSpace').css('background-color', slideObject.color);
    console.log("You are on slide" + " " + (appState.slideNumber + 1));
@@ -228,8 +213,6 @@ var setColorStyle = function (slideObject) {
 
 var showingCurrectButtonOptions = function() {
   if (appState.slideNumber === 0) {
-    // console.log(1, appState.slideNumber);
-    // console.log(2, appState.slideInformation.length -1);
     $("#button-previous").hide();
     $("#button-next").show();
   } else if (appState.slideNumber === (appState.slideInformation.length -1)){
@@ -277,7 +260,7 @@ var showingCurrectButtonOptions = function() {
 */
 
 // data links
-var dataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI_OUTDOOR_SIGNS.geojson';
+var advertisignDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI_OUTDOOR_SIGNS.geojson';
 var highwayDistrictDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/Highway_Districts.geojson';
 var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/highways.geoJSON';
 
@@ -285,20 +268,37 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
  /* =====================
    Executing Code
  ===================== */
+ //creating GLOBAL VARIABLES so I can reference them later, between functions (they will retain information)
+ var initialAdvertisingFeatures; //global to store information about the initial advertising markers
+ var subsuquentAdvertisingFeatures; //for use with new advertising markers
+ var highwayFeature; // use to store feature group about the highway
+ var highwayDistFeature; //use to store faeture groups about the highway districts
+
 
  $(document).ready(function() {
    // var geoData = LI_OUTDOOR_ADVERTISING.geojson; //hardcoding option, does NOT work
-   $.ajax(dataLink).done(function(pointData){ //note: when it included the word "Advertising" adblocker prevented if from loading
+   $.ajax(advertisignDataLink).done(function(pointData){ //note: when it included the word "Advertising" adblocker prevented if from loading
      parsedSignData = JSON.parse(pointData);
       //  console.log(parsedSignData);
 
       $.ajax(highwayDistrictDataLink).done(function(polygonData) { // download this here because we reference it for more than one slide below
-        highwayDistrictDataLink = JSON.parse(polygonData);
+        parsedHighwayDistData = JSON.parse(polygonData);
+
+        // calculating how many advertsiement signs are in each highway district (using turf.js):
+        var smartHighwayDistrictsData = turf.count(parsedHighwayDistData, parsedSignData, 'pt_count'); //joins to the polygon layer (which is what I want)
+
+        // from the below calculation it appears the point count ranges from about 150 to 400:
+        // (this informs the 3-tone chloropath cut-offs: 101-200, 201-300, 300+)
+        var allpt_Counts = _.map(smartHighwayDistrictsData.features, function(item) {return item.properties.pt_count;});
+        var groupedpt_Counts = _.groupBy(allpt_Counts);
+
 
         //to find unique owners in dataset & length of each array:
         var allOwners = _.map(parsedSignData.features, function(item) {return item.properties.OWNER;});
-        var groupedOwners = _.groupBy(allOwners);
+        var groupedOwners = _.groupBy(allOwners); //this variable doesn't seem to be easy to manipulate or call elements of...
         // console.log(groupedOwners);
+
+        // RESULTS:
         // CHANNEL OUTDOOR: Array[1266]
         // INTERSTATE OUTDOOR ADVERTISING: Array[7]
         // LAMAR ADVERTISING: Array[1]
@@ -307,27 +307,28 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
 
 
         //default markers on first page
-         featureGroup = L.geoJson(parsedSignData, {
+         initialAdvertisingFeatures = L.geoJson(parsedSignData, {
            style: allRedStyle,
            filter: null,
            pointToLayer: circleStyle,
           //  onEachFeature: popupFnx
          }).addTo(map);
-        //  console.log(featureGroup);
+        //  console.log(initialAdvertisingFeatures);
 
-        featureGroup.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+        initialAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
 
-
+        //code to execute with the NEXT button:
          $("#button-next").click(function() {
           // clear any existing features from map:
-          if (featureGroup !== undefined) {featureGroup.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
-          if (newFeatureGroup !== undefined) {newFeatureGroup.clearLayers();} // same as above but for subsequent slides
+          if (initialAdvertisingFeatures !== undefined) {initialAdvertisingFeatures.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
+          if (subsuquentAdvertisingFeatures !== undefined) {subsuquentAdvertisingFeatures.clearLayers();} // same as above but for subsequent slides
           if (highwayFeature !== undefined) {highwayFeature.clearLayers();} // same as above but for subsequent slides
           if (highwayDistFeature !== undefined) {highwayDistFeature.clearLayers();} // same as above but for subsequent slides
 
            //call the next slide
            setColorStyle(nextSlide());
-           //undate text in sidebar:
+
+           //update sidebar text:
            $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
            $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
 
@@ -340,45 +341,45 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
               }).addTo(map).bringToBack();
            });}
 
-           // add highway distrcts data to the map:
+           // add highway districts data to the map:
             if (appState.slideNumber ===  4) {
-              highwayDistFeature = L.geoJson(highwayDistrictDataLink, {
-               style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 0.8};} //'zIndexOffset': -99
+              highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
+               style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
               }).addTo(map).bringToBack();
            }
 
            if (appState.slideNumber ===  5) {
-             highwayDistFeature = L.geoJson(highwayDistrictDataLink, {
-              style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 0.8};} //'zIndexOffset': -99
+             highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
+               style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
              }).addTo(map).bringToBack();
+             highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.pt_count);});
           }
 
-          //  console.log(3, appState.slideInformation[appState.slideNumber]["filterParam"]);
-           newFeatureGroup = L.geoJson(parsedSignData, {
+          // add advertising (once filtered or changed) to map:
+           subsuquentAdvertisingFeatures = L.geoJson(parsedSignData, {
              style: theEachOwnerStyle,
              filter: appState.slideInformation[appState.slideNumber]["filterParam"],
              pointToLayer: circleStyle,
            }).addTo(map).bringToFront();
 
-          featureGroup.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
-          //  featureGroup.addData(newMapData);
+          subsuquentAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
 
-           //  filterParamFnx = appState.slideInformation[appState.slideNumber]["filterFunction"];
            // change the map zoom & extend by panning:
            centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"]; //it actually doesn't read it properly using the dot notation. Ignore the warnings.
            // console.log(centerLatLng);
            zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
            // console.log(zoomExtent);
            map.setView(centerLatLng, zoomExtent);
-           $("button-previous").show();
+
+           // ensure only the relevant next and previous buttons are visible:
            showingCurrectButtonOptions();
          });
 
-
+         //code to execute with the PREVIOUS button:
          $("#button-previous").click(function() {
            // clear any existing features from map:
-           if (featureGroup !== undefined) {featureGroup.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
-           if (newFeatureGroup !== undefined) {newFeatureGroup.clearLayers();} // same as above but for subsequent slides
+           if (initialAdvertisingFeatures !== undefined) {initialAdvertisingFeatures.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
+           if (subsuquentAdvertisingFeatures !== undefined) {subsuquentAdvertisingFeatures.clearLayers();} // same as above but for subsequent slides
            if (highwayFeature !== undefined) {highwayFeature.clearLayers();} // same as above but for subsequent slides
            if (highwayDistFeature !== undefined) {highwayDistFeature.clearLayers();} // same as above but for subsequent slides
 
@@ -387,6 +388,7 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
            // update sidebar text:
            $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
            $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
+
            // add  highway data to the map:
            if (appState.slideNumber === 3)
            {$.ajax(highwayMajorDataLink).done(function(lineData) { //reference within the if statement because only use for 1 slide (simpler than requiring to load at beginning, I think)
@@ -398,30 +400,35 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
 
            // add highway distrcts data to the map:
             if (appState.slideNumber ===  4) {
-              highwayDistFeature = L.geoJson(highwayDistrictDataLink, {
-               style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 0.8};} //'zIndexOffset': -99
+              highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
+                style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
               }).addTo(map).bringToBack();
            }
 
            if (appState.slideNumber ===  5) {
-             highwayDistFeature = L.geoJson(highwayDistrictDataLink, {
-              style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 0.8};} //'zIndexOffset': -99
+             highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
+               style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
              }).addTo(map).bringToBack();
+             highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.pt_count).openPopup();});
           }
 
-          //  console.log(3, appState.slideInformation[appState.slideNumber]["filterParam"]);
-           newFeatureGroup = L.geoJson(parsedSignData, {
+
+          // add advertising (once filtered or changed) to map:
+           subsuquentAdvertisingFeatures = L.geoJson(parsedSignData, {
              style: theEachOwnerStyle,
              filter: appState.slideInformation[appState.slideNumber]["filterParam"],
              pointToLayer: circleStyle,
            }).addTo(map).bringToFront();
 
-          featureGroup.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
-          //  featureGroup.addData(newMapData);
+          highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+          //  subsuquentAdvertisingFeatures.addData(newMapData);
 
+          // change the map zoom & extend by panning:
            centerLatLng = appState.slideInformation[appState.slideNumber]["panningParams"];
            zoomExtent = appState.slideInformation[appState.slideNumber]["zoomingParams"];
            map.setView(centerLatLng, zoomExtent);
+
+           // ensure only the relevant next and previous buttons are visible:
            showingCurrectButtonOptions();
          });
      });
