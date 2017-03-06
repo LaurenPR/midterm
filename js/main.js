@@ -107,7 +107,7 @@ var slide4 = {
 var slide5 = {
   'color': "#660066",
   'title-Header': "Linking to Highway Districts",
-  'sidebar-Text': "Given the apparent link between outdoor advertising signs and highways, this next section starts to incorporate elements of highway districts.",
+  'sidebar-Text': "Given the apparent link between outdoor advertising signs and highways, this next section starts to incorporate elements of highway districts and shows the count of how many signs are in each district.",
   'panningParams': [39.991966, -75.154483],
   'zoomingParams': 11,
   'filterParam': null,
@@ -118,11 +118,12 @@ var slide5 = {
     'color': "#660066",
     'title-Header': "Linking to Highway Districts",
     'sidebar-Text': "The user will be able to click on any of the districts to zoom in and gather more information. This focuses on South Philly's Highway District as an example.",
-    'panningParams': [39.902307, -75.187975], //re-focus on South District
+    'panningParams': [39.904785, -75.208710], //re-focus on South District
     'zoomingParams': 13, //zoom in on district
     'filterParam': null,
 
     };
+
 
 var allSlides = [slide1, slide2, slide3, slide4, slide5, slide6];
 
@@ -170,8 +171,6 @@ var theEachOwnerStyle = function(feature) {
      case "OUTFRONT MEDIA": return {color: "#5e3c99"}; //darkblue #3300ff
      case "STEEN OUTDOOR": return {color: "#fdae61"}; //#orange
      case "CLEAR CHANNEL OUTDOOR": return {color: "#EE3B3B"}; //red
-
-     // case " ": return {color: "#ff0000"}; //uneeded now that we filter these out!
    }
    return {};
  };
@@ -181,6 +180,20 @@ var theEachOwnerStyle = function(feature) {
  the aerial background (with mapbox), or only make the aerial visible at a certain zoom (and have a more
  basic background for the initial zoomed-out level)*/
 
+var filterStyle = function(feature){
+  if (appState.slideNumber === 0){
+    return {color: "#EE3B3B"};
+  } else {
+    switch (feature.properties.OWNER) {
+      case "LAMAR ADVERTISING": return {color: "#fff"}; //white (only 1!)
+      case "INTERSTATE OUTDOOR ADVERTISING": return {color: "#b2abd2"}; //light purple
+      case "OUTFRONT MEDIA": return {color: "#5e3c99"}; //darkblue #3300ff
+      case "STEEN OUTDOOR": return {color: "#fdae61"}; //#orange
+      case "CLEAR CHANNEL OUTDOOR": return {color: "#EE3B3B"}; //red
+    }
+    return {};
+  }
+};
 
 // creating a chloropah function (dark to light green) for use later with highway district density map
  var assingGreenChloropahColors = function(value) {
@@ -274,7 +287,6 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
  var highwayFeature; // use to store feature group about the highway
  var highwayDistFeature; //use to store faeture groups about the highway districts
 
-
  $(document).ready(function() {
    // var geoData = LI_OUTDOOR_ADVERTISING.geojson; //hardcoding option, does NOT work
    $.ajax(advertisignDataLink).done(function(pointData){ //note: when it included the word "Advertising" adblocker prevented if from loading
@@ -346,13 +358,14 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
               highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
                style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
               }).addTo(map).bringToBack();
+              highwayDistFeature.eachLayer(function(layer){layer.bindPopup('Point Count ' + layer.feature.properties.pt_count);}); //this throws an error when you don't append a string (similar to this issue here: http://gis.stackexchange.com/questions/141329/error-when-trying-to-bind-popup-on-geojson-failed-to-execute-appendchild)
            }
 
            if (appState.slideNumber ===  5) {
              highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
                style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
              }).addTo(map).bringToBack();
-             highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.pt_count);});
+             highwayDistFeature.eachLayer(function(layer){layer.bindPopup('Point Count ' + layer.feature.properties.pt_count).openPopup();});
           }
 
           // add advertising (once filtered or changed) to map:
@@ -403,24 +416,25 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
               highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
                 style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
               }).addTo(map).bringToBack();
+              highwayDistFeature.eachLayer(function(layer){layer.bindPopup('Point Count ' + layer.feature.properties.pt_count);});
            }
 
            if (appState.slideNumber ===  5) {
              highwayDistFeature = L.geoJson(smartHighwayDistrictsData, {
                style: function(feature) {return {'color': '#fff', "weight": 2, "opacity": 1, fillColor: assingGreenChloropahColors(feature.properties.pt_count), "fillOpacity": 0.7};}
              }).addTo(map).bringToBack();
-             highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.pt_count).openPopup();});
+             highwayDistFeature.eachLayer(function(layer){layer.bindPopup('Point Count ' + layer.feature.properties.pt_count).openPopup();});
           }
 
-
           // add advertising (once filtered or changed) to map:
+
            subsuquentAdvertisingFeatures = L.geoJson(parsedSignData, {
-             style: theEachOwnerStyle,
+             style: filterStyle,
              filter: appState.slideInformation[appState.slideNumber]["filterParam"],
              pointToLayer: circleStyle,
            }).addTo(map).bringToFront();
 
-          highwayDistFeature.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+          subsuquentAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
           //  subsuquentAdvertisingFeatures.addData(newMapData);
 
           // change the map zoom & extend by panning:
