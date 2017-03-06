@@ -136,7 +136,7 @@ var appState = {
 // var filterParamFnx; //this filter function changes for each slide
 // var parsedData;
 var featureGroup; //global to store information about the features that will be filtered
-
+var newFeatureGroup; //another global to reference
 
 // This switches what is being active on the page to the next Slide (no wrapping: hard stop at end slide)
 var nextSlide = function () {
@@ -282,15 +282,17 @@ var dataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermData/master/LI
 
        $("#button-next").click(function() {
          // clear features from map:
-         featureGroup.clearLayers(); // clears any existing features from the geoJson layer for advertising
-         //call the next slide (THIS SHOULD CHANGE)
+        //  map.clearLayers(featureGroup);
+        if (featureGroup !== undefined) {featureGroup.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
+        if (newFeatureGroup !== undefined) {newFeatureGroup.clearLayers();} // clears any existing features from the geoJson layer for advertising, must add in the if statement because it is ONLY defined for the defaults when first open up slides
+         //call the next slide
          setColorStyle(nextSlide());
          //undate text in sidebar:
          $("#text-heading").text(appState.slideInformation[appState.slideNumber]["title-Header"]);
          $("#text-description").text(appState.slideInformation[appState.slideNumber]["sidebar-Text"]);
          // add new data to the map:
          console.log(3, appState.slideInformation[appState.slideNumber]["filterParam"]);
-         var featureGroup = L.geoJson(parsedData, {
+         newFeatureGroup = L.geoJson(parsedData, {
            style: theStyle,
            filter: appState.slideInformation[appState.slideNumber]["filterParam"],
            pointToLayer: circleStyle,
