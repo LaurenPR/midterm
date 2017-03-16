@@ -205,6 +205,9 @@ var  circleStyle = function (feature, latlng) {
          return L.circleMarker(latlng, MarkerOptions);
 };
 
+var markerClusters = L.markerClusterGroup(); //this gets filled later
+
+
 //this was just a function to test the prev & next button's ability (still helps identify what slide you are on):
 var setColorStyle = function (slideObject) {
    $('#blankSpace').css('background-color', slideObject.color);
@@ -329,13 +332,28 @@ var highwayMajorDataLink = 'https://raw.githubusercontent.com/LaurenPR/midtermDa
 
 
         //default markers on first page
-         initialAdvertisingFeatures = L.geoJson(parsedSignData, {
-           style: allRedStyle,
-           filter: null,
-           pointToLayer: circleStyle,
-         }).addTo(map);
+        //  initialAdvertisingFeatures = L.geoJson(parsedSignData, {
+        //    style: allRedStyle,
+        //    filter: null,
+        //    pointToLayer: circleStyle,
+        //  }).addTo(map);
 
-        initialAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+        // initialAdvertisingFeatures.eachLayer(function(layer){layer.bindPopup(layer.feature.properties.OWNER);});
+
+
+         //UPDATED default markers on first page (but ONLY when you first open the storyboard): using cluster mapping:
+          initialAdvertisingFeatures = L.geoJson(parsedSignData, {
+            style: allRedStyle,
+            filter: null,
+          });
+
+          markerClusters.addLayer(initialAdvertisingFeatures);
+          map.addLayer(markerClusters);
+
+          //removing the legend (no longer makes sense on initial start-up)
+          $("#legend_allRED").hide();
+
+
 
         //code to execute with the NEXT button:
         $("#button-next").click(function() {
